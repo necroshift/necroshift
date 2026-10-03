@@ -68,6 +68,14 @@ that deployment with roles (owner/admin/member).
   recorded per project, capped at the 100 most recent, so a
   self-hosting user can diagnose a broken SDK integration without
   reading server logs.
+- **Onboarding completion**: first access to a fresh deployment (no
+  users yet) runs a setup flow — create the owner account, name the
+  organization, create a first project, then view integration docs and
+  wait for that project's first ingested log or crash report.
+  Onboarding is considered complete once that first event arrives
+  (inferred from the presence of an ingestion event for the project,
+  not a separate stored flag); every step has a "skip for now" escape
+  hatch to the dashboard.
 
 ### Roadmap (sub-projects, built and specced one at a time)
 
