@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: necroshift
+      POSTGRES_PASSWORD: necroshift
+      POSTGRES_DB: necroshift
+    ports:
+      - "5433:5432"
+    volumes:
+      - necroshift_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U necroshift -d necroshift"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+volumes:
+  necroshift_postgres_data:
