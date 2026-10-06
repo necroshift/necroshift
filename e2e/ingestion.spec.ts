@@ -7,6 +7,7 @@ test.describe.configure({ mode: "serial" })
 
 const orgId = "e2e-ingestion-org"
 const projectId = "e2e-ingestion-project"
+const projectSlug = "payments-api"
 // Mirrors apps/web/src/domains/ingestion/ingestion-key.ts's scheme — kept
 // standalone here rather than reaching across the app boundary from e2e/.
 const validKey = `nk_live_${randomBytes(24).toString("base64url")}`
@@ -24,7 +25,7 @@ async function seed(request: APIRequestContext) {
   await db.insert(organization).values({ id: orgId, name: "Acme Inc", slug: orgId, createdAt: new Date() })
   await db
     .insert(project)
-    .values({ id: projectId, organizationId: orgId, name: "Payments API", slug: "payments-api" })
+    .values({ id: projectId, organizationId: orgId, name: "Payments API", slug: projectSlug })
   await db.insert(ingestionKey).values({ projectId, keyHash: validKeyHash })
 }
 
@@ -36,7 +37,7 @@ test.describe("ingestion API", () => {
   test.afterAll(wipe)
 
   test("valid key + valid payload succeeds", async ({ request }) => {
-    const response = await request.post(`/api/ingest/${projectId}/logs`, {
+    const response = await request.post(`/api/ingest/${projectSlug}/logs`, {
       headers: { Authorization: `Bearer ${validKey}` },
       data: { level: "error", message: "Payment failed" },
     })
@@ -44,7 +45,7 @@ test.describe("ingestion API", () => {
   })
 
   test("invalid key is rejected", async ({ request }) => {
-    const response = await request.post(`/api/ingest/${projectId}/logs`, {
+    const response = await request.post(`/api/ingest/${projectSlug}/logs`, {
       headers: { Authorization: "Bearer nk_live_not-a-real-key" },
       data: { message: "hi" },
     })
@@ -52,7 +53,7 @@ test.describe("ingestion API", () => {
   })
 
   test("invalid payload is rejected", async ({ request }) => {
-    const response = await request.post(`/api/ingest/${projectId}/crashes`, {
+    const response = await request.post(`/api/ingest/${projectSlug}/crashes`, {
       headers: { Authorization: `Bearer ${validKey}` },
       data: "not-an-object",
     })

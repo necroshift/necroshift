@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation"
 import { getCurrentSession } from "@/src/domains/auth/get-current-session"
-import { isFirstRun } from "@/src/domains/auth/is-first-run"
+import { needsOnboarding } from "@/src/domains/onboarding/needs-onboarding"
 
 export const dynamic = "force-dynamic"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  if (await isFirstRun()) {
+  if (await needsOnboarding()) {
     redirect("/onboarding")
   }
 

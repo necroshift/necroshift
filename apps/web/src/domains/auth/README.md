@@ -1,17 +1,14 @@
 # Auth domain
 
 Owns everything about who's signed in: the better-auth route handler,
-the React client (`authClient`), the sign-in page/form, and the
-first-run check used to route a fresh deployment to onboarding instead
-of a sign-in form nobody can use yet.
+the React client (`authClient`), the sign-in page/form, and session
+reads. The "does this deployment need onboarding yet?" check lives in
+the `onboarding` domain, not here — see its README.
 
 ## How it works
 
 - `auth-client.ts` is the only place that calls `createAuthClient`.
   Every other file (forms, nav, session reads) imports from here.
-- `is-first-run.ts` answers "does any user exist yet?" by querying
-  `@workspace/db` directly. `true` means this is a fresh deployment —
-  `/sign-in` redirects to `/onboarding`, and vice versa.
 - Necroshift is invite-only (see `packages/auth`'s `validateUserInfo`):
   there is no public self-registration form here. The first account is
   created by `/onboarding`; every account after that is created by

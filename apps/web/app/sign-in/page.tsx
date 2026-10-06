@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation"
-import { isFirstRun } from "@/src/domains/auth/is-first-run"
+import { needsOnboarding } from "@/src/domains/onboarding/needs-onboarding"
 import { SignInForm } from "@/src/domains/auth/sign-in-form"
 
 export const dynamic = "force-dynamic"
 
 export default async function SignInPage() {
-  if (await isFirstRun()) {
+  if (await needsOnboarding()) {
     redirect("/onboarding")
   }
 

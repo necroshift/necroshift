@@ -9,9 +9,13 @@ import { recordIngestionEvent } from "./record-event"
 
 type PayloadType = "log" | "crash"
 
-export async function handleIngestionRequest(request: Request, projectId: string, payloadType: PayloadType) {
-  const projectExists = await projectRowExists(projectId)
-  if (!projectExists) return NextResponse.json({ error: "not_found" }, { status: 404 })
+// The URL names a project by its slug (readable, the form every ingestion
+// snippet shown in the UI uses) — resolve that to the real id once, then
+// work with the id everywhere else (ingestion_key/log_entry/crash_report/
+// ingestion_event all reference project.id, not its slug).
+export async function handleIngestionRequest(request: Request, projectSlug: string, payloadType: PayloadType) {
+  const projectId = await resolveProjectId(projectSlug)
+  if (!projectId) return NextResponse.json({ error: "not_found" }, { status: 404 })
 
   const key = await authenticateIngestionKey(projectId, bearerToken(request))
   if (!key) return respondAndLog(projectId, null, payloadType, 401, "invalid_key")
@@ -29,9 +33,9 @@ export async function handleIngestionRequest(request: Request, projectId: string
   }
 }
 
-async function projectRowExists(projectId: string): Promise<boolean> {
-  const [row] = await db.select({ id: project.id }).from(project).where(eq(project.id, projectId)).limit(1)
-  return Boolean(row)
+async function resolveProjectId(slug: string): Promise<string | null> {
+  const [row] = await db.select({ id: project.id }).from(project).where(eq(project.slug, slug)).limit(1)
+  return row?.id ?? null
 }
 
 function bearerToken(request: Request): string | null {

@@ -16,10 +16,15 @@ Owns `ingestion_key`, `log_entry`, `crash_report`, and `ingestion_event`
   statement. Never throws — a failure here must not break ingestion
   itself, so it logs to console instead.
 - `handle-request.ts`: the shared logic behind both ingestion routes
-  (`app/api/ingest/[projectId]/logs` and `.../crashes`, which are thin
-  wrappers calling this with `payloadType`). Every outcome — 401 on a
-  bad key, 400 on a payload that fails `packages/contracts`'
-  validation, 200 on success — also records an event.
+  (`app/api/ingest/[projectSlug]/logs` and `.../crashes`, which are thin
+  wrappers calling this with `payloadType`). The URL names a project by
+  its *slug* (what every ingestion snippet in the UI shows, and what a
+  real integrator would copy) — resolved to the real id once, up front;
+  everything downstream (the key lookup, `log_entry`/`crash_report`,
+  the event row) uses that id, same as everywhere else in the schema.
+  Every outcome — 401 on a bad key, 400 on a payload that fails
+  `packages/contracts`' validation, 200 on success — also records an
+  event.
 - `events-actions.ts` / `events-tab.tsx`: the Integration Events half
   of `SettingsApiKeys.dc.html`. The API Keys half lives in a domain of
   its own (sub-project task), and the page composing both tabs is
