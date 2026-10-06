@@ -2,7 +2,10 @@ import { defineConfig } from "@playwright/test"
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  // Specs share one live dev Postgres and seed/wipe the same tables, so
+  // cross-file parallelism races; one worker keeps every file serialized.
+  fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
   use: {

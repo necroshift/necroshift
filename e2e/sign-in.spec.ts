@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { db } from "@workspace/db/client"
-import { organization, user } from "@workspace/db/schema"
+import { member, organization, user } from "@workspace/db/schema"
 
 test.describe.configure({ mode: "serial" })
 
@@ -32,9 +32,14 @@ test.describe("sign in", () => {
 
   test.beforeAll(async ({ request }) => {
     await wipeAuthTables()
-    await request.post("/api/auth/sign-up/email", {
+    const response = await request.post("/api/auth/sign-up/email", {
       data: { email, password, name: "Test Owner" },
     })
+    const { user: created } = await response.json()
+    await db.insert(organization).values({ id: "e2e-signin-org", name: "Acme Inc", slug: "e2e-signin-org", createdAt: new Date() })
+    await db
+      .insert(member)
+      .values({ id: "e2e-signin-member", organizationId: "e2e-signin-org", userId: created.id, role: "owner", createdAt: new Date() })
   })
 
   test.afterAll(wipeAuthTables)
@@ -45,7 +50,7 @@ test.describe("sign in", () => {
     await page.getByLabel("Password").fill(password)
     await page.getByRole("button", { name: "Sign in" }).click()
     await expect(page).toHaveURL("/")
-    await expect(page.getByText(`Signed in as ${email}`)).toBeVisible()
+    await expect(page.getByRole("link", { name: "Issues" })).toBeVisible()
   })
 
   test("rejects an uninvited second sign-up", async ({ request }) => {
