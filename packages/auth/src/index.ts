@@ -1,9 +1,3 @@
-import { fileURLToPath } from "node:url"
-import path from "node:path"
-import { config as loadEnv } from "dotenv"
-
-loadEnv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../.env") })
-
 import { and, eq } from "drizzle-orm"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"

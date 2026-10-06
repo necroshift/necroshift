@@ -1,19 +1,24 @@
-import { Button } from "@workspace/ui/components/button"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
+import { auth } from "@workspace/auth"
+import { isFirstRun } from "@/src/domains/auth/is-first-run"
 
-export default function Page() {
+export const dynamic = "force-dynamic"
+
+export default async function Page() {
+  if (await isFirstRun()) {
+    redirect("/onboarding")
+  }
+
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) {
+    redirect("/sign-in")
+  }
+
+  // The real dashboard shell lands in a later sub-project task.
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="text-muted-foreground font-mono text-xs">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
+    <div className="flex min-h-svh items-center justify-center p-6">
+      <p className="text-muted-foreground text-sm">Signed in as {session.user.email} — dashboard coming soon.</p>
     </div>
   )
 }

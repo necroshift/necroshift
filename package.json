@@ -9,12 +9,14 @@
     "format": "turbo format",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "test:e2e": "playwright test"
+    "test:e2e": "dotenv -e .env -- playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
+    "@workspace/db": "workspace:*",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "dotenv-cli": "^11.0.0",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "turbo": "^2.11.5",

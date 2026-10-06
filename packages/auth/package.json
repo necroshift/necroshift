@@ -7,7 +7,7 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.ts\"",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests"
+    "test": "dotenv -e ../../.env -- vitest run --passWithNoTests"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -23,7 +23,6 @@
   "dependencies": {
     "@workspace/db": "workspace:*",
     "better-auth": "^1.7.7",
-    "dotenv": "^18.0.5",
     "drizzle-orm": "^0.45.3"
   }
 }
