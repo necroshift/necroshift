@@ -1,6 +1,6 @@
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
-import { organization } from "./auth.ts"
+import { organization } from "./auth"
 
 export const project = pgTable("project", {
   id: text("id")

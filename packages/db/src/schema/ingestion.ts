@@ -1,6 +1,6 @@
 import { integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
-import { project } from "./project.ts"
+import { project } from "./project"
 
 export const payloadTypeEnum = pgEnum("payload_type", ["log", "crash"])
 export const ingestionStatusEnum = pgEnum("ingestion_status", ["success", "error"])

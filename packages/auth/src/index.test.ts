@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { db, pool } from "@workspace/db/client"
 import * as schema from "@workspace/db/schema"
-import { isRegistrationAllowed } from "./index.ts"
+import { isRegistrationAllowed } from "./index"
 
 const orgId = "test-org-registration-gate"
 const userId = "test-user-registration-gate"

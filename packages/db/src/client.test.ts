@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, test } from "vitest"
-import { db, pool } from "./client.ts"
-import * as schema from "./schema/index.ts"
+import { db, pool } from "./client"
+import * as schema from "./schema/index"
 
 const tables = {
   user: schema.user,

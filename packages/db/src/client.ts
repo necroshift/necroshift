@@ -6,7 +6,7 @@ loadEnv({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../.
 
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
-import * as schema from "./schema/index.ts"
+import * as schema from "./schema/index"
 
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 

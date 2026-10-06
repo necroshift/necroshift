@@ -1,6 +1,6 @@
 import { pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
-import { organization } from "./auth.ts"
+import { organization } from "./auth"
 
 export const llmProviderEnum = pgEnum("llm_provider", ["anthropic", "openai"])
 
