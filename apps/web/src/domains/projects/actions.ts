@@ -6,7 +6,8 @@ import { db } from "@workspace/db/client"
 import { ingestionKey, project } from "@workspace/db/schema"
 import { ok, fail, type ActionResult } from "@/src/lib/action-result"
 import { getShellContext } from "@/src/domains/shell/get-shell-context"
-import { generateIngestionKey } from "./ingestion-key"
+import { requireSession } from "@/src/domains/auth/require-session"
+import { generateIngestionKey } from "@/src/domains/ingestion/ingestion-key"
 import { slugify } from "./slugify"
 
 export type ProjectSummary = {
@@ -17,6 +18,7 @@ export type ProjectSummary = {
 }
 
 export async function listProjects(): Promise<ProjectSummary[]> {
+  await requireSession()
   const context = await getShellContext()
   if (!context) return []
   return db
@@ -27,6 +29,7 @@ export async function listProjects(): Promise<ProjectSummary[]> {
 }
 
 export async function createProject(input: { name: string }): Promise<ActionResult<{ project: ProjectSummary; ingestionKey: string }>> {
+  await requireSession()
   const name = input.name.trim()
   if (!name) return fail("Project name is required.")
 

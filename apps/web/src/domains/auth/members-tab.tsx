@@ -49,7 +49,7 @@ export function MembersTab() {
           </div>
           <div className="flex w-36 flex-col gap-1.5">
             <Label>Role</Label>
-            <Select value={role} onValueChange={(v) => setRole(v as "admin" | "member")}>
+            <Select value={role} onValueChange={(v) => v && setRole(v as "admin" | "member")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
