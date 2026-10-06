@@ -1,6 +1,7 @@
 {
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "paths": {
       "@workspace/db/*": ["./src/*"]
     }
