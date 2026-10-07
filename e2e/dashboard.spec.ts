@@ -54,12 +54,25 @@ test.describe("dashboard shell", () => {
     await expect(page.getByRole("link", { name: "View ingestion key" })).toBeVisible()
   })
 
-  test("sidebar nav links route to the right pages", async ({ page }) => {
+  test("sidebar nav links route to the right pages and tabs", async ({ page }) => {
     await signIn(page)
+
     await page.getByRole("link", { name: "Projects" }).click()
-    await expect(page).toHaveURL("/settings/projects")
+    await expect(page).toHaveURL("/settings/projects?tab=projects")
+    await expect(page.getByRole("tab", { name: "Projects", selected: true })).toBeVisible()
+
+    await page.getByRole("link", { name: "Members" }).click()
+    await expect(page).toHaveURL("/settings/projects?tab=members")
+    await expect(page.getByRole("tab", { name: "Members", selected: true })).toBeVisible()
+
     await page.getByRole("link", { name: "API Keys" }).click()
-    await expect(page).toHaveURL("/settings/api-keys")
+    await expect(page).toHaveURL("/settings/api-keys?tab=keys")
+    await expect(page.getByRole("tab", { name: "API Keys", selected: true })).toBeVisible()
+
+    await page.getByRole("link", { name: "Integration Events" }).click()
+    await expect(page).toHaveURL("/settings/api-keys?tab=events")
+    await expect(page.getByRole("tab", { name: "Integration Events", selected: true })).toBeVisible()
+
     await page.getByRole("link", { name: "Issues" }).click()
     await expect(page).toHaveURL("/")
   })

@@ -1,30 +1,30 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@workspace/ui/components/tabs"
 import { AppShell } from "@/src/domains/shell/app-shell"
+import { UrlTabs } from "@/src/domains/shell/url-tabs"
 import { getShellContext } from "@/src/domains/shell/get-shell-context"
 import { getCurrentSession } from "@/src/domains/auth/get-current-session"
 import { EventsTab } from "@/src/domains/ingestion/events-tab"
 import { ApiKeysTab } from "@/src/domains/api-keys/api-keys-tab"
 
-export default async function SettingsApiKeysPage() {
+export default async function SettingsApiKeysPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>
+}) {
   const session = await getCurrentSession()
   const context = await getShellContext()
   if (!session || !context) return null
 
+  const { tab } = await searchParams
+
   return (
-    <AppShell active="api-keys" title="Settings" context={context} userEmail={session.user.email}>
+    <AppShell active={tab === "events" ? "events" : "api-keys"} title="Settings" context={context} userEmail={session.user.email}>
       <div className="p-8">
-        <Tabs defaultValue="keys">
-          <TabsList>
-            <TabsTrigger value="keys">API Keys</TabsTrigger>
-            <TabsTrigger value="events">Integration Events</TabsTrigger>
-          </TabsList>
-          <TabsContent value="keys" className="pt-6">
-            <ApiKeysTab />
-          </TabsContent>
-          <TabsContent value="events" className="pt-6">
-            <EventsTab />
-          </TabsContent>
-        </Tabs>
+        <UrlTabs
+          tabs={[
+            { value: "keys", label: "API Keys", content: <ApiKeysTab /> },
+            { value: "events", label: "Integration Events", content: <EventsTab /> },
+          ]}
+        />
       </div>
     </AppShell>
   )

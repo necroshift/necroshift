@@ -61,7 +61,7 @@ function Sidebar({
 
         <OrgSwitcher context={context} />
 
-        <nav className="flex flex-col gap-0.5">
+        <nav className="flex flex-col gap-2">
           <NavLink href="/" active={active === "issues"} icon={<PulseIcon size={16} />}>
             Issues
           </NavLink>
@@ -70,16 +70,16 @@ function Sidebar({
             Settings
           </div>
 
-          <NavLink href="/settings/projects" active={active === "projects"} icon={<FolderSimpleIcon size={16} />}>
+          <NavLink href="/settings/projects?tab=projects" active={active === "projects"} icon={<FolderSimpleIcon size={16} />}>
             Projects
           </NavLink>
-          <NavLink href="/settings/projects" active={active === "members"} icon={<UsersIcon size={16} />}>
+          <NavLink href="/settings/projects?tab=members" active={active === "members"} icon={<UsersIcon size={16} />}>
             Members
           </NavLink>
-          <NavLink href="/settings/api-keys" active={active === "api-keys"} icon={<LockIcon size={16} />}>
+          <NavLink href="/settings/api-keys?tab=keys" active={active === "api-keys"} icon={<LockIcon size={16} />}>
             API Keys
           </NavLink>
-          <NavLink href="/settings/api-keys" active={active === "events"} icon={<ListBulletsIcon size={16} />}>
+          <NavLink href="/settings/api-keys?tab=events" active={active === "events"} icon={<ListBulletsIcon size={16} />}>
             Integration Events
           </NavLink>
         </nav>
