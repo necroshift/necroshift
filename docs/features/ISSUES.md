@@ -1,46 +1,40 @@
 # Issues
 
-**Status:** Planned (sub-project 2 on the `CLAUDE.md` roadmap) — only the empty state ships in Foundation
-**Owns (today):** `apps/web/src/domains/issues` (empty state only)
-**Will read from:** `log_entry`, `crash_report` (see [INGESTION](./INGESTION.md))
+**Status:** Shipped (v1) — sub-project 2 on the `CLAUDE.md` roadmap (NEC-5)
+**Owns:** `apps/web/src/domains/issues` — `issue` table, grouping,
+list/detail UI, resolve action
+**Reads from:** `crash_report` (see [INGESTION](./INGESTION.md))
 
 ## Overview
 
-Issues is the dashboard: the view that turns raw ingested logs and
-crash reports into things a human (or the self-heal pipeline) can act
-on. It's the main screen of the product — the one a team actually
-lives in day to day — and it's the direct trigger for
-[SELF_HEAL](./SELF_HEAL.md): an issue surfacing here is what kicks off
-an investigation.
+Issues is the dashboard: the view that turns raw ingested crash
+reports into things a human (or the self-heal pipeline) can act on.
+It's the main screen of the product and the direct trigger for
+[SELF_HEAL](./SELF_HEAL.md): an issue's detail page is where a
+self-heal run is started.
 
-Foundation ships only the empty state (no issues yet, with the
-ingestion snippet to get started) — the real triage experience is its
-own sub-project, specced separately before being built.
+## v1 scope — how the open questions below were resolved
 
-## What this needs to answer (for the full feature's spec)
+- **Grouping**: an issue groups `crash_report` rows only (not
+  `log_entry`) by a SHA-256 fingerprint of the crash message
+  (lowercased/trimmed). A crash is an unambiguous "something broke"
+  signal; log-based grouping is a later iteration.
+- **Detail view**: occurrence stats (count, first/last seen) and the
+  latest occurrence's raw payload. Severity/priority and search/filter
+  are not in v1.
+- **Status**: plain `open`/`resolved`. A new occurrence on a resolved
+  issue reopens it. The richer New/Self-Healing/Fix Proposed states
+  from the early draft mockup were deliberately not built — they
+  depend on [SELF_HEAL](./SELF_HEAL.md), which didn't exist yet when
+  this shipped.
+- **What closes an issue**: a manual "Mark resolved" action only, for
+  v1 — not tied to a merged PR yet (self-heal's PR flow doesn't
+  auto-resolve the issue it came from).
 
-- What makes a group of logs/crash reports *one issue*, versus two
-  separate ones? (Fingerprinting/grouping strategy.)
-- What does an issue's detail view show — raw payloads, a timeline, an
-  AI-generated summary, linked fix history from
-  [SELF_HEAL](./SELF_HEAL.md)?
-- How is severity/priority decided, if at all, for v1?
-- Search/filter scope: by project, time range, status
-  (new/acknowledged/resolved), free text?
-- What closes an issue — a merged fix PR, a manual action, both?
+## Out of scope (v1)
 
-## Key decisions already made (from the roadmap)
-
-- Scope for sub-project 2 explicitly includes "issue triage UX, log
-  search/explorer" (`CLAUDE.md`).
-- This is downstream of [INGESTION](./INGESTION.md)'s `log_entry` and
-  `crash_report` tables — Issues doesn't ingest anything itself, only
-  reads and interprets what's already landed.
-
-## Out of scope (v1 of *this* feature, once built)
-
-To be determined in that sub-project's own design spec — see
-`docs/superpowers/specs/` once it exists.
+Severity/priority, search/filter, log-based grouping, auto-resolve on
+merged PR.
 
 ## References
 

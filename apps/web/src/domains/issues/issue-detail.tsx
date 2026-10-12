@@ -6,6 +6,7 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/ArrowLeft"
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { getIssue, getLatestOccurrence, markResolved } from "./actions"
+import { SelfHealCard } from "@/src/domains/self-heal/self-heal-card"
 
 export function IssueDetail({ id }: { id: string }) {
   const queryClient = useQueryClient()
@@ -62,6 +63,8 @@ export function IssueDetail({ id }: { id: string }) {
           </pre>
         </div>
       )}
+
+      <SelfHealCard issueId={id} />
     </div>
   )
 }

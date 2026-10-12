@@ -10,6 +10,9 @@ export default defineConfig({
       // an explicit no-op alias to do the same.
       "server-only": path.resolve(__dirname, "./vitest.empty-module.ts"),
       "client-only": path.resolve(__dirname, "./vitest.empty-module.ts"),
+      // Mirrors tsconfig's "@/*": ["./*"] (apps/web/tsconfig.json) — Next's
+      // compiler resolves that alias itself; plain Vitest needs it explicit.
+      "@": __dirname,
     },
   },
 })

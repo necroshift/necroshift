@@ -1,9 +1,11 @@
 # Self-Heal Pipeline
 
-**Status:** Planned (sub-project 3 on the `CLAUDE.md` roadmap)
-**Will use:** the GitHub token from [AUTH](./AUTH.md), the LLM key from
-[API_KEYS](./API_KEYS.md), issue context from [ISSUES](./ISSUES.md),
-and (optionally) [INTEGRATIONS](./INTEGRATIONS.md)
+**Status:** Shipped (v1) — sub-project 3 on the `CLAUDE.md` roadmap (NEC-6)
+**Owns:** `apps/web/src/domains/self-heal` (trigger + progress UI) and
+`apps/sandbox-runner` (the actual pipeline — clone, fix, test, PR)
+**Uses:** the GitHub token from [AUTH](./AUTH.md), the LLM key from
+[API_KEYS](./API_KEYS.md), issue context from [ISSUES](./ISSUES.md).
+Full design: `docs/superpowers/specs/2026-10-12-necroshift-self-heal-design.md`.
 
 ## Overview
 
@@ -38,20 +40,38 @@ configure it.
 7. **Open a pull request**: against the application's repository, for
    a human to review.
 
-## What this needs to answer (for this sub-project's own spec)
+## v1 scope — how the open questions below were resolved
 
-- Sandbox technology/isolation model (container? VM? what resource
-  limits?).
-- Exact trigger conditions (every new issue? a threshold? manual only
-  for v1?).
-- How much repo context the agent gets beyond the failing code path
-  (full clone? targeted file access?).
-- What "tested a fix" means concretely — does it require passing an
-  existing test suite, writing new tests, both?
-- Failure handling: what happens if the agent can't produce a fix at
-  all (no PR, a comment on the issue, a notification)?
-- Cost/safety guardrails: can this loop, spawn unbounded LLM calls, or
-  touch anything outside the target repo?
+These two were checked with the user explicitly before building, given
+the risk profile (real code execution, real repo access, real PRs):
+**fully live** (not stubbed) but **manual trigger only**, and sandbox
+isolation via a **dedicated `sandbox-runner` service** that owns the
+Docker socket — the `web` app never touches it.
+
+- **Sandbox technology**: Docker, via a dedicated `sandbox-runner`
+  compose service (not Docker-outside-of-Docker from `web`). Ephemeral
+  `--rm` containers, `--memory 1g --cpus 1`, 15-minute hard timeout.
+- **Trigger**: manual only — a "Start self-heal" button on the issue
+  detail page. No automatic triggering on crash/issue creation yet.
+- **Repo context**: a git file listing, plus the content of any file
+  the crash text actually references (best-effort path matching) — not
+  a full tool-use/exploration loop.
+- **"Tested a fix"**: if the project has a `package.json` `test`
+  script, it must pass — a failing suite blocks PR creation entirely.
+  No test script detected proceeds, but says so plainly in the step
+  detail and the PR body.
+- **Failure handling**: every step reports its own status
+  (`self_heal_step`); a failure at any step marks the run `failed`
+  with the error recorded, remaining steps stay `pending` (never
+  silently marked done). No PR is opened on failure.
+- **Cost/safety guardrails**: manual trigger + one run per issue at a
+  time + hard timeout + container resource limits + secrets passed via
+  a `0600` temp env-file (never `-e`, which leaks to `ps`) + a
+  dedicated low-privilege service holding the only Docker socket access
+  in the deployment.
+- **Fix generation**: a single LLM call per run (not a multi-turn
+  coding-agent loop) — a real v1 simplification, stated here rather
+  than hidden.
 
 ## Key decisions already made (from the roadmap)
 
@@ -65,9 +85,23 @@ configure it.
   auto-merge — the product is an on-call engineer that *proposes*
   fixes, not one with unsupervised write access to production code.
 
-## Out of scope (v1 of *this* feature, once built)
+## Out of scope (v1)
 
-To be determined in that sub-project's own design spec.
+Automatic triggering, multi-turn/tool-using coding-agent loop (one
+LLM call per run only), ticket-filing before PR creation (needs
+[INTEGRATIONS](./INTEGRATIONS.md), not built yet), per-organization
+concurrency/resource quotas beyond "one run per issue."
+
+## Known limitation
+
+Never exercised against a real GitHub repo end-to-end in the dev
+environment used to build it — no registered GitHub OAuth App exists
+there yet (`GITHUB_CLIENT_ID`/`SECRET` are placeholders), so no real
+GitHub account can be linked to try a real clone/PR. Everything up to
+that boundary (guard logic, run/step orchestration, the sandbox's
+git/test-running/progress-reporting mechanics) is tested against real
+Postgres and a real local git repo — see `apps/sandbox-runner`'s
+tests and its README.
 
 ## References
 

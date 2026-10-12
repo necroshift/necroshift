@@ -15,6 +15,13 @@
       "when": 1791810977369,
       "tag": "0001_wet_radioactive_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791814722319,
+      "tag": "0002_ambitious_morbius",
+      "breakpoints": true
     }
   ]
 }

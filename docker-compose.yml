@@ -16,5 +16,27 @@ services:
       timeout: 2s
       retries: 20
 
+  # Owns the Docker socket so the `web` app never has to — see the
+  # self-heal design spec. Only launches ephemeral `necroshift-sandbox`
+  # containers; build that image once with:
+  #   docker build -f apps/sandbox-runner/Dockerfile.sandbox -t necroshift-sandbox .
+  sandbox-runner:
+    build:
+      context: .
+      dockerfile: apps/sandbox-runner/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://necroshift:necroshift@postgres:5432/necroshift
+      SANDBOX_IMAGE: necroshift-sandbox
+      SANDBOX_DOCKER_NETWORK: necroshift_default
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   necroshift_postgres_data:

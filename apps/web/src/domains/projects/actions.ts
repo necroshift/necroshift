@@ -14,6 +14,7 @@ export type ProjectSummary = {
   id: string
   name: string
   slug: string
+  repoUrl: string | null
   createdAt: Date
 }
 
@@ -22,10 +23,27 @@ export async function listProjects(): Promise<ProjectSummary[]> {
   const context = await getShellContext()
   if (!context) return []
   return db
-    .select({ id: project.id, name: project.name, slug: project.slug, createdAt: project.createdAt })
+    .select({
+      id: project.id,
+      name: project.name,
+      slug: project.slug,
+      repoUrl: project.repoUrl,
+      createdAt: project.createdAt,
+    })
     .from(project)
     .where(eq(project.organizationId, context.organization.id))
     .orderBy(desc(project.createdAt))
+}
+
+export async function setProjectRepo(input: { projectId: string; repoUrl: string }): Promise<ActionResult<null>> {
+  await requireSession()
+  const repoUrl = input.repoUrl.trim()
+  if (!/^https:\/\/github\.com\/[^/\s]+\/[^/\s]+$/.test(repoUrl)) {
+    return fail("Enter a GitHub repo URL, e.g. https://github.com/org/repo")
+  }
+  await db.update(project).set({ repoUrl }).where(eq(project.id, input.projectId))
+  revalidatePath("/settings/projects")
+  return ok(null)
 }
 
 export async function createProject(input: { name: string }): Promise<ActionResult<{ project: ProjectSummary; ingestionKey: string }>> {

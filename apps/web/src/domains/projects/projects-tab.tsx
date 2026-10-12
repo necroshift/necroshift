@@ -9,6 +9,7 @@ import { Label } from "@workspace/ui/components/label"
 import { FolderSimpleIcon } from "@phosphor-icons/react/FolderSimple"
 import { createProject, listProjects } from "./actions"
 import { NewKeyBanner } from "./new-key-banner"
+import { ProjectRepoField } from "./project-repo-field"
 
 export function ProjectsTab() {
   const queryClient = useQueryClient()
@@ -65,9 +66,10 @@ export function ProjectsTab() {
               <span className="text-sm font-medium">{p.name}</span>
               <span className="text-muted-foreground text-xs">{p.slug}</span>
             </div>
-            <div className="text-muted-foreground bg-muted flex-1 rounded-md px-2.5 py-1.5 font-mono text-xs">
+            <div className="text-muted-foreground bg-muted rounded-md px-2.5 py-1.5 font-mono text-xs">
               nk_live_••••••••••••••••
             </div>
+            <ProjectRepoField projectId={p.id} repoUrl={p.repoUrl} />
             <span className="text-muted-foreground text-xs">{new Date(p.createdAt).toLocaleDateString()}</span>
           </div>
         ))}
