@@ -9,16 +9,24 @@ const SANDBOX_IMAGE = process.env.SANDBOX_IMAGE ?? "necroshift-sandbox"
 const DOCKER_NETWORK = process.env.SANDBOX_DOCKER_NETWORK ?? "necroshift_default"
 
 // Secrets go in a 0600 temp env-file, not `docker run -e`, which would put
-// them in the host's process list (`ps aux`) for the lifetime of the spawn.
+// them in the host's process list (`ps aux`). The file is deleted right
+// after the container is *created* (detached mode), not after it exits —
+// `docker run`'s CLI reads --env-file synchronously before the daemon call
+// returns, so holding the file on disk for the container's full run (up to
+// TIMEOUT_MS) would leave secrets sitting in plaintext far longer than
+// necessary.
 export async function startSandboxContainer(input: RunRequest): Promise<void> {
   const dir = await mkdtemp(join(tmpdir(), "necroshift-run-"))
   const envFile = join(dir, ".env")
+  const containerName = `necroshift-sandbox-${input.runId}`
   try {
     await writeFile(envFile, formatEnvFile(input), { mode: 0o600 })
-    await runContainer(input.runId, envFile)
+    await createContainer(containerName, envFile)
   } finally {
     await rm(dir, { recursive: true, force: true })
   }
+  await streamLogs(containerName)
+  await waitWithTimeout(containerName)
 }
 
 function formatEnvFile(input: RunRequest): string {
@@ -40,10 +48,10 @@ function formatEnvFile(input: RunRequest): string {
   return lines.join("\n")
 }
 
-function runContainer(runId: string, envFile: string): Promise<void> {
-  const containerName = `necroshift-sandbox-${runId}`
+function createContainer(containerName: string, envFile: string): Promise<void> {
   const args = [
     "run",
+    "-d",
     "--rm",
     "--name",
     containerName,
@@ -57,10 +65,26 @@ function runContainer(runId: string, envFile: string): Promise<void> {
     envFile,
     SANDBOX_IMAGE,
   ]
-  const child = spawn("docker", args, { stdio: "inherit" })
+  return new Promise((resolve, reject) => {
+    const child = spawn("docker", args)
+    child.on("error", reject)
+    child.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`docker run exited with code ${code}`))))
+  })
+}
+
+// Best-effort: `-d` mode means we lose the automatic stdout/stderr
+// streaming a foreground `docker run` would give us, so stream logs
+// separately for observability. Not awaited as part of the critical path.
+function streamLogs(containerName: string): Promise<void> {
+  spawn("docker", ["logs", "-f", containerName], { stdio: "inherit" })
+  return Promise.resolve()
+}
+
+function waitWithTimeout(containerName: string): Promise<void> {
+  const waiter = spawn("docker", ["wait", containerName])
   const timer = setTimeout(() => spawn("docker", ["kill", containerName]), TIMEOUT_MS)
   return new Promise((resolve) => {
-    child.on("exit", () => {
+    waiter.on("exit", () => {
       clearTimeout(timer)
       resolve()
     })
