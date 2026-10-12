@@ -6,6 +6,7 @@ import { crashReport, logEntry, project } from "@workspace/db/schema"
 import { crashPayloadSchema, logPayloadSchema } from "@workspace/contracts/ingestion"
 import { authenticateIngestionKey } from "./authenticate-key"
 import { recordIngestionEvent } from "./record-event"
+import { upsertIssueForCrash } from "@/src/domains/issues/upsert-issue"
 
 type PayloadType = "log" | "crash"
 
@@ -51,13 +52,12 @@ async function persistPayload(projectId: string, payloadType: PayloadType, data:
       message: typeof data.message === "string" ? data.message : null,
       rawPayload: data,
     })
-  } else {
-    await db.insert(crashReport).values({
-      projectId,
-      message: typeof data.message === "string" ? data.message : null,
-      rawPayload: data,
-    })
+    return
   }
+
+  const message = typeof data.message === "string" ? data.message : null
+  const issueId = await upsertIssueForCrash({ projectId, message })
+  await db.insert(crashReport).values({ projectId, message, rawPayload: data, issueId })
 }
 
 async function respondAndLog(

@@ -1,6 +1,7 @@
 import { integer, jsonb, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
 import { project } from "./project"
+import { issue } from "./issues"
 
 export const payloadTypeEnum = pgEnum("payload_type", ["log", "crash"])
 export const ingestionStatusEnum = pgEnum("ingestion_status", ["success", "error"])
@@ -41,6 +42,7 @@ export const crashReport = pgTable("crash_report", {
   projectId: text("project_id")
     .notNull()
     .references(() => project.id, { onDelete: "cascade" }),
+  issueId: text("issue_id").references(() => issue.id, { onDelete: "set null" }),
   message: text("message"),
   rawPayload: jsonb("raw_payload").notNull(),
   receivedAt: timestamp("received_at").defaultNow().notNull(),
@@ -74,6 +76,7 @@ export const logEntryRelations = relations(logEntry, ({ one }) => ({
 
 export const crashReportRelations = relations(crashReport, ({ one }) => ({
   project: one(project, { fields: [crashReport.projectId], references: [project.id] }),
+  issue: one(issue, { fields: [crashReport.issueId], references: [issue.id] }),
 }))
 
 export const ingestionEventRelations = relations(ingestionEvent, ({ one }) => ({
