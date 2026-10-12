@@ -15,16 +15,24 @@ export type RunRequest = {
 // starting with "-").
 const GITHUB_HTTPS_URL = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/?$/
 
+// docker-run.ts writes runId/repoUrl/githubToken/llmApiKey verbatim as
+// KEY=VALUE lines in a docker --env-file; a value containing a newline
+// could inject an extra, attacker-chosen env var into the sandbox
+// container's environment. None of these are ever legitimately multi-line.
+function isSingleLineString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0 && !/[\r\n]/.test(value)
+}
+
 export function isRunRequest(value: unknown): value is RunRequest {
   if (!value || typeof value !== "object") return false
   const v = value as Record<string, unknown>
   return (
-    typeof v.runId === "string" &&
-    typeof v.repoUrl === "string" &&
+    isSingleLineString(v.runId) &&
+    isSingleLineString(v.repoUrl) &&
     GITHUB_HTTPS_URL.test(v.repoUrl) &&
-    typeof v.githubToken === "string" &&
+    isSingleLineString(v.githubToken) &&
     (v.llmProvider === "anthropic" || v.llmProvider === "openai") &&
-    typeof v.llmApiKey === "string" &&
+    isSingleLineString(v.llmApiKey) &&
     typeof v.issueTitle === "string"
   )
 }

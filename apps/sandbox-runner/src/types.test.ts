@@ -35,4 +35,10 @@ describe("isRunRequest", () => {
     expect(isRunRequest({ ...valid, repoUrl: "-x" })).toBe(false)
     expect(isRunRequest({ ...valid, repoUrl: "git@github.com:acme/payments-api.git" })).toBe(false)
   })
+
+  test("rejects a newline in fields written verbatim into the sandbox's env-file", () => {
+    expect(isRunRequest({ ...valid, githubToken: "ghp_abc\nEVIL=1" })).toBe(false)
+    expect(isRunRequest({ ...valid, llmApiKey: "sk-abc\r\nEVIL=1" })).toBe(false)
+    expect(isRunRequest({ ...valid, runId: "r1\nEVIL=1" })).toBe(false)
+  })
 })
