@@ -8,11 +8,13 @@ import { requireSession } from "@/src/domains/auth/require-session"
 import { getShellContext } from "@/src/domains/shell/get-shell-context"
 import { ok, type ActionResult } from "@/src/lib/action-result"
 import { getDecryptedConnection } from "./connection-store"
+import { isJiraConfigured } from "./jira-oauth"
+import { isLinearConfigured } from "./linear-oauth"
 import { listJiraProjects, listLinearTeams, type RoutingTarget } from "./list-targets"
 
 export type Provider = "jira" | "linear"
 
-export type ConnectionSummary = { provider: Provider; connected: boolean; label: string | null }
+export type ConnectionSummary = { provider: Provider; connected: boolean; label: string | null; configured: boolean }
 
 export async function listConnections(): Promise<ConnectionSummary[]> {
   await requireSession()
@@ -22,14 +24,24 @@ export async function listConnections(): Promise<ConnectionSummary[]> {
   return (["jira", "linear"] as const).map((provider) => summarize(provider, rows))
 }
 
+function isProviderConfigured(provider: Provider): boolean {
+  return provider === "jira" ? isJiraConfigured() : isLinearConfigured()
+}
+
 function emptyConnections(): ConnectionSummary[] {
-  return (["jira", "linear"] as const).map((provider) => ({ provider, connected: false, label: null }))
+  return (["jira", "linear"] as const).map((provider) => ({
+    provider,
+    connected: false,
+    label: null,
+    configured: isProviderConfigured(provider),
+  }))
 }
 
 function summarize(provider: Provider, rows: (typeof connection.$inferSelect)[]): ConnectionSummary {
+  const configured = isProviderConfigured(provider)
   const row = rows.find((r) => r.provider === provider)
-  if (!row) return { provider, connected: false, label: null }
-  return { provider, connected: true, label: row.siteUrl ?? "Connected" }
+  if (!row) return { provider, connected: false, label: null, configured }
+  return { provider, connected: true, label: row.siteUrl ?? "Connected", configured }
 }
 
 export async function disconnectConnection(provider: Provider): Promise<void> {

@@ -44,6 +44,14 @@ training-data recall alone — see that doc's references.
   routing picker, using the connection's live token.
 - `record-connection-event.ts`: mirrors ingestion's
   `record-event.ts` — FIFO-trimmed to 100 per (org, provider).
+- `isJiraConfigured()` / `isLinearConfigured()` (in `jira-oauth.ts` /
+  `linear-oauth.ts`): a deployment only has these OAuth app credentials
+  once an admin registers an app in that provider's developer console
+  and sets the env vars — `listConnections()` surfaces this as
+  `configured` so `ConnectionCard` disables Connect (with an env-var
+  hint) instead of letting the click reach `/api/connections/[provider]/authorize`,
+  which re-checks the same thing server-side and redirects with
+  `?error=not_configured` rather than 500ing if hit directly.
 
 ## Self-heal integration
 

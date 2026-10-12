@@ -39,6 +39,16 @@ of nowhere.
   `connection`, reconnecting a provider immediately restores ticket
   filing for every project already routed to it — no re-picking
   required.
+- **Per-deployment OAuth app registration**: each self-hosted
+  deployment registers its own OAuth app with Jira/Linear (its own
+  `client_id`/`secret`, tied to its own redirect URI) — there is no
+  Necroshift-wide shared app, so nothing is "lent" between deployments.
+  Until an admin sets `JIRA_CLIENT_ID`/`SECRET` or
+  `LINEAR_CLIENT_ID`/`SECRET`, that provider's Connect button is
+  disabled (with an env-var hint) rather than erroring — checked both
+  client-side (`listConnections`' `configured` field) and server-side
+  (the authorize route re-checks and redirects with
+  `?error=not_configured` instead of 500ing).
 
 ## Intended flow (per `CLAUDE.md`'s key decisions)
 

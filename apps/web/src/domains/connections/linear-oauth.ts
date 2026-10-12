@@ -10,6 +10,14 @@ function redirectUri(): string {
   return `${requiredEnv("BETTER_AUTH_URL")}/api/connections/linear/callback`
 }
 
+// Deployment admins register their own OAuth app in Linear's settings and
+// set these; a fresh self-hosted deployment won't have them yet. Checked
+// before the Connect flow starts so a missing env var surfaces as a
+// disabled button, not a 500 deep inside buildLinearAuthorizeUrl.
+export function isLinearConfigured(): boolean {
+  return Boolean(process.env.LINEAR_CLIENT_ID) && Boolean(process.env.LINEAR_CLIENT_SECRET)
+}
+
 export function buildLinearAuthorizeUrl(state: string): string {
   const url = new URL("https://linear.app/oauth/authorize")
   url.searchParams.set("client_id", requiredEnv("LINEAR_CLIENT_ID"))

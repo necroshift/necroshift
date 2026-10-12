@@ -10,6 +10,14 @@ function redirectUri(): string {
   return `${requiredEnv("BETTER_AUTH_URL")}/api/connections/jira/callback`
 }
 
+// Deployment admins register their own OAuth app in Atlassian's developer
+// console and set these; a fresh self-hosted deployment won't have them yet.
+// Checked before the Connect flow starts so a missing env var surfaces as
+// a disabled button, not a 500 deep inside buildJiraAuthorizeUrl.
+export function isJiraConfigured(): boolean {
+  return Boolean(process.env.JIRA_CLIENT_ID) && Boolean(process.env.JIRA_CLIENT_SECRET)
+}
+
 // read:jira-work/write:jira-work for issue creation, offline_access for a
 // refresh token (Jira Cloud access tokens are short-lived).
 const SCOPE = "read:jira-work write:jira-work offline_access"
