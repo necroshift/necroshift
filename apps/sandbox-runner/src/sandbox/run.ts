@@ -4,6 +4,9 @@ import { listRepoFiles, guessReferencedFile, readRepoFile } from "./repo-context
 import { draftFix, type FixDraft } from "./llm"
 import { runProjectTests, type TestResult } from "./test-runner"
 import { openPullRequest } from "./github-api"
+import { createJiraTicket } from "./jira-ticket"
+import { createLinearTicket } from "./linear-ticket"
+import { recordConnectionEvent } from "./record-connection-event"
 import { startStep, finishStep, failRun, completeRun, closeDb } from "./report-progress"
 
 async function main(): Promise<void> {
@@ -35,7 +38,9 @@ async function runPipeline(env: SandboxEnv): Promise<void> {
   }
   await finishStep(env.runId, "test", testDetail(testResult))
 
-  const prUrl = await runStep(env.runId, "open_pr", () => openPr(env, branchName, draft, testResult))
+  const ticketUrl = await fileTicketIfConfigured(env)
+
+  const prUrl = await runStep(env.runId, "open_pr", () => openPr(env, branchName, draft, testResult, ticketUrl))
   await finishStep(env.runId, "open_pr", `Opened ${prUrl}`)
   await completeRun(env.runId, draft.summary, prUrl)
 }
@@ -74,18 +79,24 @@ async function developFix(env: SandboxEnv): Promise<FixDraft> {
   return draft
 }
 
-async function openPr(env: SandboxEnv, branchName: string, draft: FixDraft, testResult: TestResult): Promise<string> {
+async function openPr(
+  env: SandboxEnv,
+  branchName: string,
+  draft: FixDraft,
+  testResult: TestResult,
+  ticketUrl: string | null,
+): Promise<string> {
   await pushBranch(branchName)
   return openPullRequest({
     repoUrl: env.repoUrl,
     githubToken: env.githubToken,
     branchName,
     title: `Necroshift: ${draft.summary.slice(0, 72)}`,
-    body: prBody(env, draft, testResult),
+    body: prBody(env, draft, testResult, ticketUrl),
   })
 }
 
-function prBody(env: SandboxEnv, draft: FixDraft, testResult: TestResult): string {
+function prBody(env: SandboxEnv, draft: FixDraft, testResult: TestResult, ticketUrl: string | null): string {
   const testNote = testResult.verified
     ? "The project's test suite passed."
     : "No runnable test suite was detected — this fix has not been verified by tests. Review carefully."
@@ -93,11 +104,66 @@ function prBody(env: SandboxEnv, draft: FixDraft, testResult: TestResult): strin
     "**Automated fix from Necroshift — please review before merging.**",
     "",
     `Issue: ${env.issueTitle}`,
+    ...(ticketUrl ? ["", `Tracked at: ${ticketUrl}`] : []),
     "",
     draft.summary,
     "",
     testNote,
   ].join("\n")
+}
+
+// Ticket filing is opt-in per project and, per CLAUDE.md's Integrations
+// decision, never blocks the fix: a failure here is recorded as a
+// connection_event and the pipeline proceeds to open the PR unlinked.
+async function fileTicketIfConfigured(env: SandboxEnv): Promise<string | null> {
+  const target = env.ticketTarget
+  if (!target) return null
+
+  await startStep(env.runId, "file_ticket")
+  try {
+    const url = await fileTicket(env, target)
+    await recordConnectionEvent({ organizationId: env.organizationId, provider: target.provider, projectId: env.projectId, status: "success" })
+    await finishStep(env.runId, "file_ticket", `Created a ${providerLabel(target.provider)} ticket: ${url}`)
+    return url
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    await recordConnectionEvent({
+      organizationId: env.organizationId,
+      provider: target.provider,
+      projectId: env.projectId,
+      status: "error",
+      errorReason: message,
+    })
+    await finishStep(env.runId, "file_ticket", `Ticket creation failed, continuing without one: ${message}`)
+    return null
+  }
+}
+
+async function fileTicket(env: SandboxEnv, target: NonNullable<SandboxEnv["ticketTarget"]>): Promise<string> {
+  const description = `Necroshift detected this issue and is drafting a fix.\n\nIssue: ${env.issueTitle}`
+  if (target.provider === "jira") {
+    if (!target.cloudId || !target.siteUrl) throw new Error("Jira connection is missing its site info.")
+    const { url } = await createJiraTicket({
+      accessToken: target.accessToken,
+      cloudId: target.cloudId,
+      siteUrl: target.siteUrl,
+      projectKey: target.targetId,
+      summary: `Necroshift: ${env.issueTitle}`,
+      description,
+    })
+    return url
+  }
+  const { url } = await createLinearTicket({
+    accessToken: target.accessToken,
+    teamId: target.targetId,
+    title: `Necroshift: ${env.issueTitle}`,
+    description,
+  })
+  return url
+}
+
+function providerLabel(provider: "jira" | "linear"): string {
+  return provider === "jira" ? "Jira" : "Linear"
 }
 
 function testDetail(result: TestResult): string {

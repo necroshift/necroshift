@@ -29,10 +29,13 @@ function formatEnvFile(input: RunRequest): string {
     `GITHUB_TOKEN=${input.githubToken}`,
     `LLM_PROVIDER=${input.llmProvider}`,
     `LLM_API_KEY=${input.llmApiKey}`,
-    // base64'd: these can contain newlines (stack traces), which an
-    // env-file line can't.
+    `ORGANIZATION_ID=${input.organizationId}`,
+    `PROJECT_ID=${input.projectId}`,
+    // base64'd: these can contain newlines (stack traces, a ticket target's
+    // free-text name), which an env-file line can't.
     `ISSUE_TITLE_B64=${Buffer.from(input.issueTitle).toString("base64")}`,
     `LATEST_OCCURRENCE_B64=${Buffer.from(JSON.stringify(input.latestOccurrence ?? null)).toString("base64")}`,
+    `TICKET_TARGET_B64=${Buffer.from(JSON.stringify(input.ticketTarget)).toString("base64")}`,
   ]
   return lines.join("\n")
 }

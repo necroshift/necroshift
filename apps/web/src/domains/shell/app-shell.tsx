@@ -2,6 +2,7 @@
 
 import { CaretDownIcon } from "@phosphor-icons/react/CaretDown"
 import { FolderSimpleIcon } from "@phosphor-icons/react/FolderSimple"
+import { LinkIcon } from "@phosphor-icons/react/Link"
 import { ListBulletsIcon } from "@phosphor-icons/react/ListBullets"
 import { LockIcon } from "@phosphor-icons/react/Lock"
 import { PulseIcon } from "@phosphor-icons/react/Pulse"
@@ -11,7 +12,7 @@ import { NavLink } from "./nav-link"
 import { ThemeToggleButton } from "./theme-toggle-button"
 import type { ShellContext } from "./get-shell-context"
 
-type ActiveSection = "issues" | "projects" | "members" | "api-keys" | "events"
+type ActiveSection = "issues" | "projects" | "members" | "api-keys" | "events" | "connections"
 
 export function AppShell({
   active,
@@ -81,6 +82,9 @@ function Sidebar({
           </NavLink>
           <NavLink href="/settings/api-keys?tab=events" active={active === "events"} icon={<ListBulletsIcon size={16} />}>
             Integration Events
+          </NavLink>
+          <NavLink href="/settings/connections" active={active === "connections"} icon={<LinkIcon size={16} />}>
+            Connections
           </NavLink>
         </nav>
       </div>

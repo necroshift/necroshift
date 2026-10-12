@@ -9,6 +9,9 @@ const valid = {
   llmApiKey: "sk-abc",
   issueTitle: "NullPointerException",
   latestOccurrence: { message: "boom" },
+  ticketTarget: null,
+  organizationId: "org1",
+  projectId: "proj1",
 }
 
 describe("isRunRequest", () => {
@@ -40,5 +43,26 @@ describe("isRunRequest", () => {
     expect(isRunRequest({ ...valid, githubToken: "ghp_abc\nEVIL=1" })).toBe(false)
     expect(isRunRequest({ ...valid, llmApiKey: "sk-abc\r\nEVIL=1" })).toBe(false)
     expect(isRunRequest({ ...valid, runId: "r1\nEVIL=1" })).toBe(false)
+  })
+
+  test("accepts a well-formed ticketTarget, or null", () => {
+    expect(isRunRequest(valid)).toBe(true)
+    const withTicket = {
+      ...valid,
+      ticketTarget: {
+        provider: "jira",
+        accessToken: "tok",
+        targetId: "KEY",
+        targetName: "Payments",
+        cloudId: "cloud1",
+        siteUrl: "https://acme.atlassian.net",
+      },
+    }
+    expect(isRunRequest(withTicket)).toBe(true)
+  })
+
+  test("rejects a malformed ticketTarget", () => {
+    expect(isRunRequest({ ...valid, ticketTarget: { provider: "jira" } })).toBe(false)
+    expect(isRunRequest({ ...valid, ticketTarget: "not-an-object" })).toBe(false)
   })
 })

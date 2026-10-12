@@ -18,6 +18,7 @@ export const selfHealStepNameEnum = pgEnum("self_heal_step_name", [
   "clone",
   "develop",
   "test",
+  "file_ticket",
   "open_pr",
 ])
 

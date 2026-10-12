@@ -1,5 +1,14 @@
-export const STEP_NAMES = ["investigate", "clone", "develop", "test", "open_pr"] as const
+export const STEP_NAMES = ["investigate", "clone", "develop", "test", "file_ticket", "open_pr"] as const
 export type SelfHealStepName = (typeof STEP_NAMES)[number]
+
+export type TicketTarget = {
+  provider: "jira" | "linear"
+  accessToken: string
+  targetId: string
+  targetName: string
+  cloudId: string | null
+  siteUrl: string | null
+}
 
 export type SandboxEnv = {
   runId: string
@@ -9,6 +18,9 @@ export type SandboxEnv = {
   llmApiKey: string
   issueTitle: string
   latestOccurrence: unknown
+  organizationId: string
+  projectId: string
+  ticketTarget: TicketTarget | null
 }
 
 export function readSandboxEnv(): SandboxEnv {
@@ -26,5 +38,8 @@ export function readSandboxEnv(): SandboxEnv {
     llmApiKey: require("LLM_API_KEY"),
     issueTitle: decodeB64("ISSUE_TITLE_B64"),
     latestOccurrence: JSON.parse(decodeB64("LATEST_OCCURRENCE_B64")),
+    organizationId: require("ORGANIZATION_ID"),
+    projectId: require("PROJECT_ID"),
+    ticketTarget: JSON.parse(decodeB64("TICKET_TARGET_B64")) as TicketTarget | null,
   }
 }

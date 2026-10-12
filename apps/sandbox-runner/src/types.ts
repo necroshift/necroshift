@@ -1,3 +1,12 @@
+export type TicketTarget = {
+  provider: "jira" | "linear"
+  accessToken: string
+  targetId: string
+  targetName: string
+  cloudId: string | null
+  siteUrl: string | null
+}
+
 export type RunRequest = {
   runId: string
   repoUrl: string
@@ -6,6 +15,9 @@ export type RunRequest = {
   llmApiKey: string
   issueTitle: string
   latestOccurrence: unknown
+  ticketTarget: TicketTarget | null
+  organizationId: string
+  projectId: string
 }
 
 // Defense in depth: the web app already validates repoUrl's shape before a
@@ -23,6 +35,19 @@ function isSingleLineString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && !/[\r\n]/.test(value)
 }
 
+function isTicketTarget(value: unknown): value is TicketTarget {
+  if (!value || typeof value !== "object") return false
+  const v = value as Record<string, unknown>
+  return (
+    (v.provider === "jira" || v.provider === "linear") &&
+    isSingleLineString(v.accessToken) &&
+    isSingleLineString(v.targetId) &&
+    typeof v.targetName === "string" &&
+    (v.cloudId === null || isSingleLineString(v.cloudId)) &&
+    (v.siteUrl === null || isSingleLineString(v.siteUrl))
+  )
+}
+
 export function isRunRequest(value: unknown): value is RunRequest {
   if (!value || typeof value !== "object") return false
   const v = value as Record<string, unknown>
@@ -33,6 +58,9 @@ export function isRunRequest(value: unknown): value is RunRequest {
     isSingleLineString(v.githubToken) &&
     (v.llmProvider === "anthropic" || v.llmProvider === "openai") &&
     isSingleLineString(v.llmApiKey) &&
-    typeof v.issueTitle === "string"
+    typeof v.issueTitle === "string" &&
+    (v.ticketTarget === null || isTicketTarget(v.ticketTarget)) &&
+    isSingleLineString(v.organizationId) &&
+    isSingleLineString(v.projectId)
   )
 }

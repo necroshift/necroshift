@@ -88,9 +88,13 @@ Docker socket — the `web` app never touches it.
 ## Out of scope (v1)
 
 Automatic triggering, multi-turn/tool-using coding-agent loop (one
-LLM call per run only), ticket-filing before PR creation (needs
-[INTEGRATIONS](./INTEGRATIONS.md), not built yet), per-organization
-concurrency/resource quotas beyond "one run per issue."
+LLM call per run only), per-organization concurrency/resource quotas
+beyond "one run per issue."
+
+**Update (NEC-7):** ticket-filing before PR creation is now wired —
+see [INTEGRATIONS](./INTEGRATIONS.md). It's an optional `file_ticket`
+step, only present for runs where a project has a routing target
+configured; failure there never blocks the PR.
 
 ## Known limitation
 

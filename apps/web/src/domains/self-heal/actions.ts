@@ -9,7 +9,8 @@ import { hasGithubAccount } from "@/src/domains/onboarding/has-github-account"
 import { getGithubAccessToken } from "@/src/domains/auth/github-token"
 import { resolveIssueContext } from "./resolve-issue-context"
 import { resolveLlmCredential } from "./resolve-llm-credential"
-import { STEP_NAMES, type SelfHealRunRow } from "./types"
+import { resolveTicketTarget } from "./resolve-ticket-target"
+import { STEP_NAMES, type SelfHealRunRow, type SelfHealStepName } from "./types"
 
 export type SelfHealGuard = { canStart: boolean; missing: string[] }
 
@@ -40,9 +41,10 @@ export async function startSelfHealRun(issueId: string): Promise<ActionResult<{ 
   const llm = context ? await resolveLlmCredential(context.organizationId) : null
   const githubToken = await getGithubAccessToken(session.user.id)
   if (!context || !llm || !githubToken) return fail("Missing self-heal configuration.")
+  const ticketTarget = await resolveTicketTarget(context.projectId, context.organizationId)
 
-  const runId = await createPendingRun(issueId)
-  await dispatchToSandboxRunner({ runId, context, llm, githubToken })
+  const runId = await createPendingRun(issueId, Boolean(ticketTarget))
+  await dispatchToSandboxRunner({ runId, context, llm, githubToken, ticketTarget })
   return ok({ runId })
 }
 
@@ -51,9 +53,10 @@ async function hasRunInProgress(issueId: string): Promise<boolean> {
   return rows.some((r) => r.status !== "done" && r.status !== "failed")
 }
 
-async function createPendingRun(issueId: string): Promise<string> {
+async function createPendingRun(issueId: string, includeTicketStep: boolean): Promise<string> {
   const [run] = await db.insert(selfHealRun).values({ issueId }).returning()
-  await db.insert(selfHealStep).values(STEP_NAMES.map((name) => ({ runId: run!.id, name })))
+  const names: SelfHealStepName[] = STEP_NAMES.filter((name) => name !== "file_ticket" || includeTicketStep)
+  await db.insert(selfHealStep).values(names.map((name) => ({ runId: run!.id, name })))
   return run!.id
 }
 
@@ -62,6 +65,7 @@ async function dispatchToSandboxRunner(input: {
   context: NonNullable<Awaited<ReturnType<typeof resolveIssueContext>>>
   llm: NonNullable<Awaited<ReturnType<typeof resolveLlmCredential>>>
   githubToken: string
+  ticketTarget: Awaited<ReturnType<typeof resolveTicketTarget>>
 }): Promise<void> {
   const url = process.env.SANDBOX_RUNNER_URL
   const secret = process.env.SANDBOX_RUNNER_SECRET
@@ -78,6 +82,9 @@ async function dispatchToSandboxRunner(input: {
       llmApiKey: input.llm.apiKey,
       issueTitle: input.context.title,
       latestOccurrence: input.context.latestOccurrence,
+      ticketTarget: input.ticketTarget,
+      organizationId: input.context.organizationId,
+      projectId: input.context.projectId,
     }),
   })
   if (!response.ok) await markRunFailed(input.runId, `sandbox-runner rejected the run (${response.status})`)
