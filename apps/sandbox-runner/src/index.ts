@@ -1,8 +1,17 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
+import { isAuthorized } from "./auth"
 import { startSandboxContainer } from "./docker-run"
 import { isRunRequest } from "./types"
 
 const PORT = Number(process.env.PORT ?? 4000)
+
+function requiredEnv(name: string): string {
+  const value = process.env[name]
+  if (!value) throw new Error(`Missing required env var: ${name}`)
+  return value
+}
+
+const SHARED_SECRET = requiredEnv("SANDBOX_RUNNER_SECRET")
 
 const server = createServer((req, res) => {
   if (req.method === "POST" && req.url === "/runs") return void handleStartRun(req, res)
@@ -10,7 +19,15 @@ const server = createServer((req, res) => {
   res.writeHead(404).end()
 })
 
+// This service holds the only Docker socket access in the deployment and
+// will clone whatever repo and run whatever LLM/GitHub credentials a
+// request hands it — without this check, anyone who can reach this port
+// could launch arbitrary sandboxes with credentials of their choosing.
 async function handleStartRun(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!isAuthorized(req, SHARED_SECRET)) {
+    res.writeHead(401, { "content-type": "application/json" }).end(JSON.stringify({ error: "unauthorized" }))
+    return
+  }
   const body = await readJsonBody(req).catch(() => null)
   if (!isRunRequest(body)) {
     res.writeHead(400, { "content-type": "application/json" }).end(JSON.stringify({ error: "invalid_run_request" }))

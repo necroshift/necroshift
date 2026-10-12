@@ -64,10 +64,12 @@ async function dispatchToSandboxRunner(input: {
   githubToken: string
 }): Promise<void> {
   const url = process.env.SANDBOX_RUNNER_URL
+  const secret = process.env.SANDBOX_RUNNER_SECRET
   if (!url) throw new Error("Missing required env var: SANDBOX_RUNNER_URL")
+  if (!secret) throw new Error("Missing required env var: SANDBOX_RUNNER_SECRET")
   const response = await fetch(`${url}/runs`, {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", authorization: `Bearer ${secret}` },
     body: JSON.stringify({
       runId: input.runId,
       repoUrl: input.context.repoUrl,

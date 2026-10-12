@@ -30,6 +30,9 @@ services:
       SANDBOX_IMAGE: necroshift-sandbox
       SANDBOX_DOCKER_NETWORK: necroshift_default
       PORT: "4000"
+      # Read from the root .env (docker compose auto-loads it for variable
+      # substitution) — must match what `web` sends, see .env.example.
+      SANDBOX_RUNNER_SECRET: ${SANDBOX_RUNNER_SECRET:?SANDBOX_RUNNER_SECRET must be set in .env}
     ports:
       - "4000:4000"
     volumes:

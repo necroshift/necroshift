@@ -29,4 +29,10 @@ describe("isRunRequest", () => {
     expect(isRunRequest(null)).toBe(false)
     expect(isRunRequest("hello")).toBe(false)
   })
+
+  test("rejects a repoUrl that isn't a plain github.com https URL", () => {
+    expect(isRunRequest({ ...valid, repoUrl: "https://evil.example.com/acme/payments-api" })).toBe(false)
+    expect(isRunRequest({ ...valid, repoUrl: "-x" })).toBe(false)
+    expect(isRunRequest({ ...valid, repoUrl: "git@github.com:acme/payments-api.git" })).toBe(false)
+  })
 })
